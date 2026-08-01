@@ -1,5 +1,4 @@
 web3==7.16.0
 python-dotenv
-python-telegram-bot
+requests
 fastapi[standard]
-uvicorn

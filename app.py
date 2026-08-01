@@ -1,4 +1,4 @@
-import asyncio
+import requests
 import time
 
 from datetime import (
@@ -15,7 +15,7 @@ from web3.middleware import (
     ExtraDataToPOAMiddleware
 )
 
-from telegram import Bot
+
 
 
 from config import (
@@ -69,40 +69,23 @@ telegram_enabled = bool(
 )
 
 
-telegram_bot = None
-
-
-if telegram_enabled:
-
-    telegram_bot = Bot(
-        token=TELEGRAM_BOT_TOKEN
-    )
-
-
-else:
-
-    print()
-
-    print(
-        "⚠️ Telegram belum aktif."
-    )
-
-    print(
-        "Pastikan TELEGRAM_BOT_TOKEN "
-        "dan TELEGRAM_CHAT_ID "
-        "sudah ada di .env"
-    )
-
-    print()
 
 
 # ============================================================
 # FUNGSI KIRIM TELEGRAM
 # ============================================================
+# ============================================================
+# KONFIGURASI TELEGRAM
+# ============================================================
 
-async def send_telegram_message(
-    message
-):
+telegram_enabled = bool(
+    TELEGRAM_BOT_TOKEN
+    and
+    TELEGRAM_CHAT_ID
+)
+
+
+def send_telegram(message):
 
     if not telegram_enabled:
 
@@ -111,17 +94,42 @@ async def send_telegram_message(
 
     try:
 
-        await telegram_bot.send_message(
-            chat_id=TELEGRAM_CHAT_ID,
-            text=message,
-            parse_mode="HTML",
-            disable_web_page_preview=True
+        telegram_url = (
+            f"https://api.telegram.org/"
+            f"bot{TELEGRAM_BOT_TOKEN}/"
+            f"sendMessage"
         )
 
 
-    except Exception as error:
+        response = requests.post(
+            telegram_url,
+            json={
+                "chat_id": TELEGRAM_CHAT_ID,
+                "text": message,
+                "parse_mode": "HTML",
+                "disable_web_page_preview": True
+            },
+            timeout=15
+        )
 
-        print()
+
+        response.raise_for_status()
+
+
+        print(
+            "📱 Notifikasi Telegram berhasil dikirim"
+        )
+
+
+    except requests.Timeout:
+
+        print(
+            "⚠️ Telegram timeout. "
+            "Tracker tetap berjalan."
+        )
+
+
+    except requests.RequestException as error:
 
         print(
             "⚠️ Gagal mengirim "
@@ -132,30 +140,8 @@ async def send_telegram_message(
             error
         )
 
-        print()
-
-
-def send_telegram(
-    message
-):
-
-    if not telegram_enabled:
-
-        return
-
-
-    try:
-
-        asyncio.run(
-            send_telegram_message(
-                message
-            )
-        )
-
 
     except Exception as error:
-
-        print()
 
         print(
             "⚠️ Error Telegram:"
@@ -164,10 +150,6 @@ def send_telegram(
         print(
             error
         )
-
-        print()
-
-
 # ============================================================
 # VALIDASI WALLET
 # ============================================================
